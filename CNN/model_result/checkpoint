@@ -1,0 +1,2 @@
+model_checkpoint_path: "tsr_model_weights"
+all_model_checkpoint_paths: "tsr_model_weights"

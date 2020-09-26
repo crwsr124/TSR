@@ -10,6 +10,7 @@ from skimage import exposure
 from skimage import io
 
 import sys
+import random
 
 # try to solve 
 # "Could not create cudnn handle: CUDNN_STATUS_INTERNAL_ERROR"
@@ -27,6 +28,7 @@ def getTrainData(csv_path):
     data = []
     labels = []
     rows = open(csv_path).read().strip().split("\n")[1:]
+    random.shuffle(rows)
     print("train_meta_data:")
     print(rows[0])
     print(rows[1])
@@ -45,7 +47,7 @@ def getTrainData(csv_path):
             # plt.show()
 
             # resize image and 
-            image = transform.resize(image,(32, 32, 3))
+            image = transform.resize(image,(32, 32, 3),preserve_range=True)/255.0
             
             # image = image*1.5
             # plt.figure(1)
@@ -140,19 +142,28 @@ class TrafficSignRecognition:
         # model.add( keras.layers.Dense(class_num, activation='relu') )
 
         inputs = tf.keras.Input(shape=(32, 32, 3), name="input")
-        c1 = keras.layers.Conv2D(43, (3,3), padding='same', activation='relu')(inputs)
-        c2 = keras.layers.Conv2D(43, (3,3), padding='same', activation='relu')(c1)
-        c3 = keras.layers.Conv2D(43, (3,3), padding='valid', activation='relu')(c2)
-        c4 = keras.layers.Conv2D(43, (3,3), padding='same', activation='relu')(c3)
-        c5 = c3 + keras.layers.Conv2D(43, (3,3), padding='same', activation='relu')(c4)
-        c6 = keras.layers.Conv2D(43, (3,3), padding='valid', activation='relu')(c5)
-        c7 = keras.layers.Conv2D(43, (3,3), padding='same', activation='relu')(c6)
-        c8 = keras.layers.Conv2D(43, (3,3), padding='same', activation='relu')(c7)
-        c9 = c6 + keras.layers.Conv2D(43, (3,3), padding='same', activation='relu')(c8)
+        c1 = keras.layers.Conv2D(86, (3,3), padding='same', activation='relu')(inputs)
+        c1 = tf.keras.layers.BatchNormalization()(c1)
+        c2 = c1 + keras.layers.Conv2D(86, (3,3), padding='same', activation='relu')(c1)
+        c2 = tf.keras.layers.BatchNormalization()(c2)
+        c3 = keras.layers.Conv2D(86, (3,3), padding='valid', activation='relu')(c2)
+        c3 = tf.keras.layers.BatchNormalization()(c3)
+        c4 = keras.layers.Conv2D(86, (3,3), padding='same', activation='relu')(c3)
+        c4 = tf.keras.layers.BatchNormalization()(c4)
+        c5 = c3 + keras.layers.Conv2D(86, (3,3), padding='same', activation='relu')(c4)
+        c5 = tf.keras.layers.BatchNormalization()(c5)
+        c6 = keras.layers.Conv2D(86, (3,3), padding='valid', activation='relu')(c5)
+        c6 = tf.keras.layers.BatchNormalization()(c6)
+        c7 = keras.layers.Conv2D(86, (3,3), padding='same', activation='relu')(c6)
+        c7 = tf.keras.layers.BatchNormalization()(c7)
+        c8 = keras.layers.Conv2D(86, (3,3), padding='same', activation='relu')(c7)
+        c8 = tf.keras.layers.BatchNormalization()(c8)
+        c9 = c6 + keras.layers.Conv2D(86, (3,3), padding='same', activation='relu')(c8)
+        c9 = tf.keras.layers.BatchNormalization()(c9)
         c10 = keras.layers.GlobalAveragePooling2D()(c9)
         c11 = keras.layers.Flatten()(c10)
-        c12 = keras.layers.Dense(128, activation='relu')(c11)
-        c13 = keras.layers.Dense(class_num, activation='relu')(c12)
+        #c12 = keras.layers.Dense(128, activation='relu')(c11)
+        c13 = keras.layers.Dense(class_num, activation='relu')(c11)
         model = keras.Model(inputs=inputs, outputs=c13, name='TSR')
 
         # model = keras.Sequential()
@@ -194,7 +205,7 @@ model.summary()
 
 #sys.exit()
 
-model.fit(train_data, labels, batch_size=6, epochs=10)
+model.fit(train_data, labels, batch_size=6, epochs=30)
 test_loss, test_acc = model.evaluate(test_data,  test_labels, verbose=2)
 
 print('\nTest accuracy:', test_acc)

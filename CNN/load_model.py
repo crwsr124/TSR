@@ -25,7 +25,7 @@ tsr_model = tf.keras.models.load_model('./model_result/tsr_model')
 tsr_model.load_weights('./model_result/tsr_model_weights')
 
 # test image
-testimage = io.imread("3.jpg")
+testimage = io.imread("7.jpg")
 testimage = transform.resize(testimage,(32, 32, 3))
 testimage = np.array(testimage)
 print ("shape of image: " + str(testimage.shape))
